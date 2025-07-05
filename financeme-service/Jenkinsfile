@@ -1,47 +1,40 @@
-
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    IMAGE_NAME = "anjali8329/financeme-service"
-    IMAGE_TAG = "latest"
-    PROJECT_DIR = "C:\\financeme-service\\financeme-service"
-  }
-
-  stages {
-    stage('Build Maven Project') {
-      steps {
-        echo 'Running mvn clean package...'
-        bat "cd %PROJECT_DIR% && mvn clean package -DskipTests"
-      }
+    environment {
+        IMAGE_NAME = "anjali8329/financeme-service"
     }
 
-    stage('Build Docker Image') {
-      steps {
-        echo 'Building Docker image...'
-        bat "cd %PROJECT_DIR% && docker build -t %IMAGE_NAME%:%IMAGE_TAG% ."
-      }
-    }
-
-    stage('Push Docker Image to Docker Hub') {
-      steps {
-        echo 'Pushing Docker image...'
-        withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-          bat """
-            echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-            docker push %IMAGE_NAME%:%IMAGE_TAG%
-          """
+    stages {
+        stage('Build') {
+            steps {
+                dir('financeme-service') {  // change directory if your code is nested
+                    bat 'mvn clean package -DskipTests'
+                }
+            }
         }
-      }
-    }
-  }
 
-  post {
-    success {
-      echo 'Pipeline completed successfully!'
+        stage('Docker Build') {
+            steps {
+                bat 'docker build -t %IMAGE_NAME% financeme-service'
+            }
+        }
+
+        stage('Docker Run') {
+            steps {
+                bat 'docker stop financeme-service || exit 0'
+                bat 'docker rm financeme-service || exit 0'
+                bat 'docker run -d -p 8080:8080 --name financeme-service %IMAGE_NAME%'
+            }
+        }
     }
-    failure {
-      echo 'Pipeline failed.'
+
+    post {
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
     }
-  }
 }
