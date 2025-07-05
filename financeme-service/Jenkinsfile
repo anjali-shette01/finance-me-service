@@ -24,7 +24,7 @@ pipeline {
             steps {
                 bat 'docker stop financeme-service || exit 0'
                 bat 'docker rm financeme-service || exit 0'
-                bat 'docker run -d -p 8080:8080 --name financeme-service %IMAGE_NAME%'
+                bat 'docker run -d -p 8081:8080 --name financeme-service %IMAGE_NAME%'
             }
         }
     }
